@@ -1,5 +1,5 @@
 # Đường dẫn mô hình / Model paths
-PERSON_MODEL_PATH = './models/yolov8n.pt'
+PERSON_MODEL_PATH = './models/yolov8n-person-lw.pt'
 FACE_MODEL_PATH = './models/yolov8p-face.pt'
 EMOTION_MODEL_PATH = './models/emotion_model_2.tflite'
 
