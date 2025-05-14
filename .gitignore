@@ -177,6 +177,8 @@ dataset/widerface-yolo/train/*
 dataset/widerface-yolo/val/*
 dataset/fer-2013/train/*
 dataset/fer-2013/test/*
+dataset/har/
+
 latency_distribution_h5.png
 latency_distribution_keras.png
 latency_distribution_tflite.png
