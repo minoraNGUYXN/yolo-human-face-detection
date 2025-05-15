@@ -28,13 +28,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         togglePerson: document.getElementById('togglePerson'),
         toggleFace: document.getElementById('toggleFace'),
         toggleConfidence: document.getElementById('toggleConfidence'),
-        toggleEmotions: document.getElementById('toggleEmotions'),  // Thêm chuyển đổi cảm xúc / Add emotion toggle
+        toggleEmotions: document.getElementById('toggleEmotions'),
+        toggleActions: document.getElementById('toggleActions'),
         
         // Stat elements
         personCountElement: document.getElementById('personCount'),
         faceCountElement: document.getElementById('faceCount'),
         fpsCounterElement: document.getElementById('fpsCounter'),
-        emotionsStatsElement: document.getElementById('emotionsStats')  // Thêm thống kê cảm xúc / Add emotion stats
+        emotionsStatsElement: document.getElementById('emotionsStats'),
+        actionsStatsElement: document.getElementById('actionsStats'),
     };
     
     // Initialize modules

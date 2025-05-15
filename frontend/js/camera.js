@@ -59,8 +59,8 @@ export async function startCamera() {
         // Camera configuration
         let constraints = {
             video: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
+                width: { ideal: 640 },
+                height: { ideal: 480 }
             }
         };
         

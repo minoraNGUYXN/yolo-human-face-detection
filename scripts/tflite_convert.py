@@ -17,9 +17,9 @@ converter.target_spec.supported_ops = [
     tf.lite.OpsSet.SELECT_TF_OPS       # cho phép dùng Flex ops
 ]
 
-# (tuỳ chọn) Nếu muốn thêm quantization:
-# converter.optimizations = [tf.lite.Optimize.DEFAULT]
-# converter.representative_dataset = ...
+# Bật FP16 quantization cho các weight và operation bên trong
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.target_spec.supported_types = [tf.float16]
 
 # 4. Convert
 tflite_model = converter.convert()

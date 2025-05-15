@@ -108,7 +108,7 @@ export async function processFrame() {
         drawDetections(state.personBoxes, state.faceBoxes);
         
         // Update statistics
-        updateStats(result.persons, result.faces, state.faceBoxes);
+        updateStats(result.persons, result.faces, result.person_boxes, result.face_boxes);
         
         // Increment frame counter for FPS calculation
         state.frameCount++;
@@ -158,7 +158,7 @@ export function drawDetections(personBoxes, faceBoxes) {
     const labelPadding = config.labelPadding || 6;
     const labelMargin = config.labelMargin || 8;
     const labelHeight = fontSize + labelPadding * 2;
-    const borderWidth = config.borderWidth || 4; // Độ dày của đường viền
+    const borderWidth = config.borderWidth || 4;
     
     // Draw person boxes if enabled
     if (config.showPersons && personBoxes && personBoxes.length > 0) {
@@ -172,17 +172,35 @@ export function drawDetections(personBoxes, faceBoxes) {
             ctx.lineWidth = borderWidth;
             ctx.strokeRect(x1, y1, width, height);
             
-            // Draw label if confidence display is enabled
+            // Compose label text
+            let labelParts = [];
             if (config.showConfidence) {
+                labelParts.push(`Người ${box.confidence.toFixed(2)}`);
+            }
+            
+            // Add action if enabled and available
+            if (config.showActions && box.action) {
+                labelParts.push(box.action);
+                
+                // Use action-specific color if available
+                if (config.actionColors[box.action]) {
+                    ctx.fillStyle = config.actionColors[box.action];
+                } else {
+                    ctx.fillStyle = config.actionColor;
+                }
+            } else {
+                ctx.fillStyle = config.personColor;
+            }
+            
+            // Only draw label if we have something to show
+            if (labelParts.length > 0) {
                 // Set font size for label
                 ctx.font = `bold ${fontSize}px Arial`;
                 
-                // Create label text
-                const label = `Người ${box.confidence.toFixed(2)}`;
+                const label = labelParts.join(' - ');
                 const textWidth = ctx.measureText(label).width + labelPadding * 2;
                 
-                // Create label background
-                ctx.fillStyle = config.personColor;
+                // Create label background (position above the person box)
                 ctx.fillRect(x1, y1 - labelHeight - labelMargin, textWidth, labelHeight);
                 
                 // Draw text
