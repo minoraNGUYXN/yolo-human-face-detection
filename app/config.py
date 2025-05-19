@@ -3,6 +3,7 @@ PERSON_MODEL_PATH = './models/yolov8n-person-lw.pt'
 FACE_MODEL_PATH = './models/yolov8p-face-v2.pt'
 EMOTION_MODEL_PATH = './models/emotion_model_2.tflite'
 ACTION_MODEL_PATH = './models/human_action_recognition_model.tflite'
+EMBEDDING_MODEL_PATH = './models/face_embedding_model.tflite'
 
 # Thiết lập hiển thị / Visualization settings
 PERSON_COLOR = (0, 0, 255)   # Màu đỏ / Red color

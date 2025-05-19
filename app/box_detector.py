@@ -6,11 +6,11 @@ putenv("ROCM_PATH", "/opt/rocm-6.3.0/")
 
 import numpy as np
 import cv2
-from .models import load_models, get_emotion_model_details, get_action_model_details
+from .models import load_models, get_emotion_model_details, get_action_model_details, get_embedding_model_details
 from .config import EMOTION_LABELS, ACTION_LABELS
 from .redis_utils import RedisManager
 
-#Test Vector (Tạo một vector 128 chiều ngẫu nhiên để kiểm tra):
+# #Test Vector (Tạo một vector 128 chiều ngẫu nhiên để kiểm tra):
 test_vector = np.random.rand(128).astype(np.float32) 
 
 class Detector:
@@ -21,13 +21,17 @@ class Detector:
         Initializes the Detector by loading the models.
         """
         # Tải các mô hình / Load models
-        self.person_model, self.face_model, self.emotion_interpreter, self.action_interpreter = load_models()
+        self.person_model, self.face_model, self.emotion_interpreter, self.action_interpreter, self.embedding_interpreter = load_models()
         
         # Lấy thông tin chi tiết về mô hình cảm xúc / Get emotion model details
         self.emotion_input_details, self.emotion_output_details = get_emotion_model_details(self.emotion_interpreter)
         
         # Lấy thông tin chi tiết về mô hình hành vi / Get action model details
         self.action_input_details, self.action_output_details = get_action_model_details(self.action_interpreter)
+
+        # Lấy thông tin chi tiết về mô hình nhúng khuôn mặt / Get face embedding model details
+        self.embedding_input_details, self.embedding_output_details = get_embedding_model_details(self.embedding_interpreter)
+        
         
         # Lấy kích thước đầu vào của mô hình cảm xúc / Get emotion model input size
         self.emotion_input_shape = self.emotion_input_details[0]['shape']
@@ -38,7 +42,12 @@ class Detector:
         self.action_input_shape = self.action_input_details[0]['shape']
         self.action_height = self.action_input_shape[1]
         self.action_width = self.action_input_shape[2]
-    
+
+        # Lấy kích thước đầu vào của mô hình nhúng khuôn mặt / Get face embedding model input size
+        self.face_input_shape = self.embedding_input_details[0]['shape']
+        self.face_height = self.face_input_shape[1]
+        self.face_width = self.face_input_shape[2]
+  
         # Khởi tạo kết nối Redis
         self.redis_manager = RedisManager()
         self.redis_connected = self.redis_manager.is_connected()
@@ -178,18 +187,17 @@ class Detector:
                             name = "Unknown"  
                             if face_roi.size > 0 and face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
                                 # Trích xuất vector đặc trưng
-                                # face_vector = self.extract_face_vector(face_roi) Hiện tại chưa có hàm này
+                                face_vector = self.extract_face_vector(face_roi) 
                                 # Sử dụng vector kiểm tra tạm thời / Use test vector temporarily
-                                face_vector = test_vector
                                 # Tìm kiếm khuôn mặt trong cơ sở dữ liệu
                                 try:
-                                    face_search_result = self.redis_manager.search_vector(face_vector, "test_index", 1)
+                                    face_search_result = self.redis_manager.search_vector(face_vector, "test_index4", 1)
                                     if face_search_result["success"] and face_search_result["results"]:
                                         # Lấy kết quả đầu tiên (khoảng cách thấp nhất)
                                         top_match = face_search_result["results"][0]
                                         # Kiểm tra khoảng cách, nếu đủ thấp thì sử dụng tên
-                                        if top_match["score"] <= 0.2: 
-                                            name = top_match["name"]
+                                        # if top_match["score"] <= 0.2: 
+                                        name = top_match["name"]
                                 except Exception as e:
                                     print(f"Lỗi khi tìm kiếm tên cho khuôn mặt: {e}")
                             
@@ -338,5 +346,60 @@ class Detector:
             print(f"Lỗi khi nhận diện hành vi: {e}")
             return "Không xác định"
             
-    
- 
+    def extract_face_vector(self, face_img):
+        """
+        Trích xuất vector đặc trưng 128 chiều từ ảnh khuôn mặt
+        
+        Args:
+            face_img (np.ndarray): Ảnh khuôn mặt BGR
+            
+        Returns:
+            np.ndarray: Vector đặc trưng 128 chiều
+        """
+        try:
+            # Thay đổi kích thước ảnh theo yêu cầu đầu vào / Resize to expected input dimensions
+            resized_face = cv2.resize(face_img, (self.face_width, self.face_height))
+            
+            # Kiểm tra số kênh màu đầu vào / Check input channels
+            expected_channels = self.embedding_input_details[0]['shape'][-1]
+            
+            # Chuyển đổi sang ảnh xám nếu cần / Convert to grayscale if needed
+            if expected_channels == 1:
+                processed_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2GRAY)
+            else:
+                processed_face = resized_face
+            
+            # Kiểm tra kiểu dữ liệu đầu vào từ chi tiết / Check input type from details
+            input_dtype = self.embedding_input_details[0]['dtype']
+            
+            # Xử lý tùy thuộc vào kiểu dữ liệu đầu vào / Process based on input data type
+            if input_dtype == np.float32:
+                # Chuẩn hóa giá trị pixel cho mô hình float / Normalize pixel values for float models
+                normalized_face = processed_face.astype(np.float32) / 255.0
+            elif input_dtype == np.uint8:
+                # Đối với mô hình lượng tử hóa, giữ nguyên dạng uint8 / For quantized models, keep as uint8
+                normalized_face = processed_face.astype(np.uint8)
+            else:
+                # Mặc định chuẩn hóa kiểu float32 / Default to float32 normalization
+                normalized_face = processed_face.astype(np.float32) / 255.0
+            
+            # Thay đổi hình dạng để phù hợp với đầu vào / Reshape to match input tensor shape
+            if expected_channels == 1:
+                input_tensor = normalized_face.reshape(1, self.face_height, self.face_width, 1)
+            else:
+                input_tensor = normalized_face.reshape(1, self.face_height, self.face_width, expected_channels)
+            
+            # Đặt tensor đầu vào / Set input tensor
+            self.embedding_interpreter.set_tensor(self.embedding_input_details[0]['index'], input_tensor)
+            
+            # Chạy suy luận / Run inference
+            self.embedding_interpreter.invoke()
+            
+            # Lấy tensor đầu ra / Get output tensor
+            output_tensor = self.embedding_interpreter.get_tensor(self.embedding_output_details[0]['index'])
+            
+            return output_tensor.flatten()  # Trả về vector đặc trưng 128 chiều
+            
+        except Exception:
+            print("Lỗi khi trích xuất vector khuôn mặt")
+            return np.zeros((128,), dtype=np.float32)
