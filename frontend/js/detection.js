@@ -228,6 +228,10 @@ export function drawDetections(personBoxes, faceBoxes) {
                 labelParts.push(`Mặt ${box.confidence.toFixed(2)}`);
             }
             
+            if (config.showNames && box.name && box.name !== 'Unknown') {
+                labelParts.push(box.name);
+            }
+
             // Add emotion if enabled and available
             if (config.showEmotions && box.emotion) {
                 labelParts.push(box.emotion);

@@ -8,6 +8,10 @@ import numpy as np
 import cv2
 from .models import load_models, get_emotion_model_details, get_action_model_details
 from .config import EMOTION_LABELS, ACTION_LABELS
+from .redis_utils import RedisManager
+
+#Test Vector:
+test_vector = np.random.rand(128).astype(np.float32)
 
 class Detector:
     """Xử lý nhận diện người, khuôn mặt và cảm xúc / Detection handler"""
@@ -35,7 +39,11 @@ class Detector:
         self.action_height = self.action_input_shape[1]
         self.action_width = self.action_input_shape[2]
     
-    def process_frame(self, frame):
+        # Khởi tạo kết nối Redis
+        self.redis_manager = RedisManager()
+        self.redis_connected = self.redis_manager.is_connected()
+
+    def process_frame(self,frame):
         """
         Xử lý khung hình và trả về kết quả nhận diện.
         Processes a frame and returns the detection results.
@@ -167,7 +175,24 @@ class Detector:
                             
                             # Tọa độ toàn cục cho khuôn mặt / Global coordinates for the face
                             global_coords = (px1 + fx1, py1 + fy1, px1 + fx2, py1 + fy2)
-                            face_boxes.append((global_coords, conf, emotion))
+                            name = "Unknown"  
+                            if face_roi.size > 0 and face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
+                                # Trích xuất vector đặc trưng
+                                # face_vector = self.extract_face_vector(face_roi)
+                                face_vector = test_vector
+                                # Tìm kiếm khuôn mặt trong cơ sở dữ liệu
+                                try:
+                                    face_search_result = self.redis_manager.search_vector(face_vector, "Giang_128", 1)
+                                    if face_search_result["success"] and face_search_result["results"]:
+                                        # Lấy kết quả đầu tiên (khoảng cách thấp nhất)
+                                        top_match = face_search_result["results"][0]
+                                        # Kiểm tra khoảng cách, nếu đủ thấp thì sử dụng tên
+                                        if top_match["score"] <= 0.2: 
+                                            name = top_match["name"]
+                                except Exception as e:
+                                    print(f"Lỗi khi tìm kiếm tên cho khuôn mặt: {e}")
+                            
+                            face_boxes.append((global_coords, conf, emotion, name))
                 
                 except Exception as e:
                     print(f"Error processing ROI {idx}: {e}")
@@ -311,3 +336,41 @@ class Detector:
         except Exception as e:
             print(f"Lỗi khi nhận diện hành vi: {e}")
             return "Không xác định"
+            
+    def extract_face_vector(self, face_img):
+        """
+        Phương thức giả lập để trích xuất vector đặc trưng khuôn mặt.
+        Đây là phương thức đơn giản chỉ để minh họa, cần thay thế bằng mô hình thực tế.
+        
+        Args:
+            face_img (np.ndarray): Vùng ảnh khuôn mặt / Face image region
+            
+        Returns:
+            np.ndarray: Vector đặc trưng khuôn mặt (128 chiều) / Face embedding vector (128-dimensional)
+        """
+        try:
+            # Thực tế cần một mô hình trích xuất vector đặc trưng khuôn mặt thực tế ở đây
+            # Ví dụ: Sử dụng mô hình FaceNet, ArcFace, InsightFace, v.v.
+            # Mã code giả lập cho mục đích minh họa
+            
+            # Thay đổi kích thước ảnh
+            face_img_resized = cv2.resize(face_img, (112, 112))
+            
+            # Chuẩn hóa ảnh
+            face_img_normalized = face_img_resized.astype(np.float32) / 255.0
+            
+            # Giả lập vector 128 chiều ngẫu nhiên
+            # Trong ứng dụng thực tế, vector này sẽ được trích xuất từ mô hình học sâu
+            # Ghi chú: Đây chỉ là code mẫu, cần thay thế bằng mô hình thực tế
+            face_vector = np.random.rand(128).astype(np.float32)
+            
+            # Chuẩn hóa vector (L2 normalization)
+            face_vector = face_vector / np.linalg.norm(face_vector)
+            
+            return face_vector
+            
+        except Exception as e:
+            print(f"Lỗi khi trích xuất vector đặc trưng khuôn mặt: {e}")
+            return np.zeros(128, dtype=np.float32)
+    
+ 

@@ -39,8 +39,8 @@ async def process_frame(file: UploadFile = File(...)):
             for (coords, conf, action) in person_boxes
         ],
         "face_boxes": [
-            {"coords": coords, "confidence": conf, "emotion": emotion}
-            for (coords, conf, emotion) in face_boxes
+            {"coords": coords, "confidence": conf, "emotion": emotion, "name": name}
+            for (coords, conf, emotion, name) in face_boxes
         ]
     }
 

@@ -14,6 +14,7 @@ const config = {
     showConfidence: true,
     showEmotions: true,  // Hiển thị cảm xúc / Show emotions
     showActions: true,   // Hiển thị hành vi / Show actions
+    showNames: true, 
     personColor: '#e74c3c',
     faceColor: '#2ecc71',
     emotionColor: '#ff9800',  // Màu mặc định cho cảm xúc / Default color for emotions
@@ -51,7 +52,7 @@ const config = {
     },
     
     // Server settings
-    serverUrl: '/process_frame',
+    serverUrl: 'http://127.0.0.1:8000/process_frame',
     
     // Performance settings
     frameRate: isMobile ? 20 : 30, // Lower FPS on mobile devices

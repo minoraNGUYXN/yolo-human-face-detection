@@ -18,3 +18,25 @@ EMOTION_LABELS = ['Giận dữ', 'Ghê tởm', 'Sợ hãi', 'Vui vẻ', 'Buồn 
 ACTION_LABELS = ['Gọi điện', 'Vỗ tay', 'Đạp xe', 'Khiêu vũ', 'Uống nước', 
                 'Ăn uống', 'Đánh nhau', 'Ôm', 'Cười', 'Nghe nhạc', 
                 'Chạy', 'Ngồi', 'Ngủ', 'Nhắn tin', 'Dùng laptop']
+REDIS_CONFIG = {
+    "host": "localhost", 
+    "port": 6379,
+    "db": 0,
+    "password": None,  # Đặt mật khẩu nếu có / Set password if needed
+    "decode_responses": False,  # Không tự động giải mã kết quả / Don't auto-decode responses
+}
+
+# Cấu hình Vector Search / Vector Search configuration
+VECTOR_CONFIG = {
+    "default_index": "Giang_128",
+    "face_vector_dim": 128,
+    "default_top_k": 5,
+    "min_similarity_score": 0.7,  # Ngưỡng điểm tương đồng tối thiểu / Minimum similarity score threshold
+}
+
+# Cấu hình Redis Stream / Redis Stream configuration  
+STREAM_CONFIG = {
+    "face_stream": "face_events",
+    "log_stream": "system_logs",
+    "max_stream_length": 1000,  # Độ dài tối đa lưu trữ / Maximum stream length
+}
