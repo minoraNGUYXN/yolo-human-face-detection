@@ -18,7 +18,7 @@ detector = Detector()
 r = redis.Redis(host='localhost', port=6379)
 
 # Tên index bạn muốn tạo
-index_name = "test_index4"  
+index_name = "test_index5"  
 
 # Kiểm tra nếu index chưa tồn tại thì mới tạo
 if index_name.encode() not in r.execute_command("FT._LIST"):
@@ -29,7 +29,7 @@ if index_name.encode() not in r.execute_command("FT._LIST"):
             "PREFIX", "1", "person:", 
             "SCHEMA",
             "embedding", "VECTOR", "HNSW", "6",
-            "TYPE", "FLOAT32", "DIM", "128", "DISTANCE_METRIC", "COSINE",
+            "TYPE", "FLOAT32", "DIM", "512", "DISTANCE_METRIC", "COSINE",
             "timestamp", "TEXT",
             "name", "TEXT"
         )
@@ -73,7 +73,7 @@ def upload_face_vector(image_path, person_name):
             mapping={
                 "embedding": vector_blob,
                 "timestamp": timestamp,
-                "name": person_name  # Lưu tên người thật vào field name
+                "name": person_name  
             }
         )
         
@@ -99,7 +99,7 @@ def upload_face_vector(image_path, person_name):
 
 # HÀM MAIN
 def main():
-    data_root = r"F:\HocTap\Nam3\Ki2\Khai phá dữ liệu\final_ex\dataset\Data2"
+    data_root = r"F:\HocTap\Nam3\Ki2\Khai phá dữ liệu\final_ex\dataset\Data"
 
     for person_name in os.listdir(data_root):
         person_folder = os.path.join(data_root, person_name)

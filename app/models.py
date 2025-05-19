@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import tensorflow as tf
+from tensorflow.keras import models
 from .config import PERSON_MODEL_PATH, FACE_MODEL_PATH, EMOTION_MODEL_PATH, ACTION_MODEL_PATH, EMBEDDING_MODEL_PATH
 
 def load_models():
@@ -19,10 +20,9 @@ def load_models():
     action_interpreter.allocate_tensors()
 
     #Tải mô hình nhúng khuôn mặt TensorFlow Lite / Load TFLite face embedding model
-    embedding_interpreter = tf.lite.Interpreter(model_path=EMBEDDING_MODEL_PATH)
-    embedding_interpreter.allocate_tensors()
+    embedding_model = models.load_model(EMBEDDING_MODEL_PATH)
     
-    return person_model, face_model, emotion_interpreter, action_interpreter, embedding_interpreter
+    return person_model, face_model, emotion_interpreter, action_interpreter, embedding_model
 
 def get_emotion_model_details(interpreter):
     """Lấy thông tin đầu vào và đầu ra của mô hình cảm xúc
@@ -38,9 +38,10 @@ def get_action_model_details(interpreter):
     output_details = interpreter.get_output_details()
     return input_details, output_details
 
-def get_embedding_model_details(interpreter):
+def get_embedding_model_details(model):
     """Lấy thông tin đầu vào và đầu ra của mô hình nhúng khuôn mặt
     / Get input and output details for the face embedding model"""
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    return input_details, output_details
+    # input_details = interpreter.get_input_details()
+    # output_details = interpreter.get_output_details()
+    input_shape = model.input_shape
+    return input_shape
