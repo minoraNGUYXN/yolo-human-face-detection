@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -7,6 +7,7 @@ from app.box_detector import Detector
 import numpy as np
 import cv2
 import base64
+from backend import db_utils  # Import các hàm từ db_utils.py
 
 app = FastAPI()
 detector = Detector()
@@ -31,6 +32,24 @@ async def process_frame(file: UploadFile = File(...)):
     person_count, face_count, person_boxes, face_boxes = detector.process_frame(frame)
     
     # Trả về kết quả / Return results
+    face_boxes_for_response = []
+    for (coords, conf, emotion, embedding) in face_boxes:
+        if embedding:
+            similar_faces = db_utils.find_similar_faces(embedding)  # Gọi hàm từ db_utils
+            face_names = [face["name"] for face in similar_faces]
+            face_boxes_for_response.append({
+                "coords": coords,
+                "confidence": conf,
+                "emotion": emotion,
+                "similar_faces": face_names,
+            })
+        else:
+            face_boxes_for_response.append({
+                "coords": coords,
+                "confidence": conf,
+                "emotion": emotion,
+                "similar_faces": [],
+            })
     return {
         "persons": person_count,
         "faces": face_count,
@@ -38,10 +57,7 @@ async def process_frame(file: UploadFile = File(...)):
             {"coords": coords, "confidence": conf, "action": action}
             for (coords, conf, action) in person_boxes
         ],
-        "face_boxes": [
-            {"coords": coords, "confidence": conf, "emotion": emotion}
-            for (coords, conf, emotion) in face_boxes
-        ]
+        "face_boxes": face_boxes_for_response,
     }
 
 # Health check endpoint

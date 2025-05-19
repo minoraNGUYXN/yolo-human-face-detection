@@ -3,7 +3,7 @@ Benchmark script for emotion recognition model latency testing
 Script đo hiệu năng độ trễ (latency) cho mô hình nhận diện cảm xúc
 Usage/Cách sử dụng:
     python benchmark_emotion_model.py --model_path path/to/model.[h5|tflite] --data_path path/to/test_images
-    e.g. python3 ./scripts/benchmark_emotion_model.py --model_path model.h5 --data_path ./dataset/fer-2013/test
+    e.g. python3 ./scripts/benchmark_emotion_model.py --model_path models/emotion_model_2.tflite --data_path dataset/fer-2013/test
 """
 import os
 import time
@@ -17,7 +17,7 @@ from glob import glob
 
 # Cấu hình môi trường cho AMD GPU / Environment setup for AMD GPUs
 os.environ["HSA_OVERRIDE_GFX_VERSION"] = "10.3.0"
-os.environ["ROCM_PATH"] = "/opt/rocm-6.3.3"
+os.environ["ROCM_PATH"] = "/opt/rocm-6.3.0"
 
 def preprocess_image(image_path, target_size=(32, 32)):
     """

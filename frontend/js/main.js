@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         toggleConfidence: document.getElementById('toggleConfidence'),
         toggleEmotions: document.getElementById('toggleEmotions'),
         toggleActions: document.getElementById('toggleActions'),
+        toggleFaceNames: document.getElementById('toggleFaceNames'),
         
         // Stat elements
         personCountElement: document.getElementById('personCount'),

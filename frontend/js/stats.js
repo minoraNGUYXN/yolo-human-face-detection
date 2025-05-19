@@ -7,7 +7,7 @@ import state from './state.js';
 import config from './config.js';
 
 // DOM elements
-let personCountElement, faceCountElement, fpsCounterElement, emotionsStatsElement, actionsStatsElement;
+let personCountElement, faceCountElement, fpsCounterElement, emotionsStatsElement, actionsStatsElement, detectedPeopleListElement;
 
 /**
  * Initialize stats module
@@ -19,6 +19,7 @@ export function initStats(elements) {
     fpsCounterElement = elements.fpsCounterElement;
     emotionsStatsElement = document.getElementById('emotionsStats');
     actionsStatsElement = document.getElementById('actionsStats');
+    detectedPeopleListElement = document.getElementById('detectedPeopleList').querySelector('.people-list-content');
 }
 
 /**
@@ -53,34 +54,23 @@ export function setupFpsCounter() {
 
 /**
  * Update statistics display
- * @param {number} personCount - Number of detected persons
- * @param {number} faceCount - Number of detected faces
- * @param {Array} personBoxes - Person detection boxes with action data
- * @param {Array} faceBoxes - Face detection boxes with emotion data
+ * @param {number} personCount - Number of people detected
+ * @param {number} faceCount - Number of faces detected
+ * @param {Array} personBoxes - Array of detected person objects
+ * @param {Array} faceBoxes - Array of detected face objects
  */
 export function updateStats(personCount, faceCount, personBoxes, faceBoxes) {
     personCountElement.textContent = personCount;
     faceCountElement.textContent = faceCount;
-    
-    // Update emotion statistics if enabled
-    if (config.showEmotions && faceBoxes && faceBoxes.length > 0) {
-        updateEmotionStats(faceBoxes);
-    } else {
-        // Clear emotion stats if disabled or no faces
-        if (emotionsStatsElement) {
-            emotionsStatsElement.innerHTML = '';
-        }
-    }
-    
-    // Update action statistics if enabled
-    if (config.showActions && personBoxes && personBoxes.length > 0) {
-        updateActionStats(personBoxes);
-    } else {
-        // Clear action stats if disabled or no persons
-        if (actionsStatsElement) {
-            actionsStatsElement.innerHTML = '';
-        }
-    }
+
+    // Update emotion stats
+    updateEmotionStats(faceBoxes);
+
+    // Update action stats
+    updateActionStats(personBoxes);
+
+    // Update detected people list
+    updateDetectedPeopleList(personBoxes, faceBoxes); // Add this line
 }
 
 /**
@@ -162,6 +152,135 @@ function updateActionStats(personBoxes) {
 }
 
 /**
+ * Update the list of detected people and their details
+ * @param {Array} personBoxes - Array of detected person objects
+ * @param {Array} faceBoxes - Array of detected face objects
+ */
+export function updateDetectedPeopleList(personBoxes, faceBoxes) {
+    if (!detectedPeopleListElement) return;
+
+    let peopleHtml = '';
+
+    if (personBoxes.length === 0 && faceBoxes.length === 0) {
+        peopleHtml = '<div class="person-item">Không có người nào được phát hiện.</div>';
+    } else {
+        // Create a map to link faces to persons if possible
+        const personFaceMap = new Map(); // Map: person_coords -> { person_box, face_boxes_list }
+
+        // Group faces by their associated person (if any)
+        faceBoxes.forEach(face => {
+            // Find the person box that contains this face box
+            const containingPerson = personBoxes.find(person => {
+                const [px1, py1, px2, py2] = person.coords;
+                const [fx1, fy1, fx2, fy2] = face.coords;
+                return fx1 >= px1 && fy1 >= py1 && fx2 <= px2 && fy2 <= py2;
+            });
+
+            if (containingPerson) {
+                const personKey = JSON.stringify(containingPerson.coords); // Use stringified coords as key
+                if (!personFaceMap.has(personKey)) {
+                    personFaceMap.set(personKey, { person: containingPerson, faces: [] });
+                }
+                personFaceMap.get(personKey).faces.push(face);
+            } else {
+                // If a face is detected but not inside any person box (e.g., small face, or person detection missed)
+                // Treat it as a separate detected "person" for display purposes
+                // Create a dummy person box for this face
+                const dummyPerson = { coords: face.coords, confidence: 1.0, action: 'Không xác định' };
+                const personKey = JSON.stringify(dummyPerson.coords);
+                if (!personFaceMap.has(personKey)) {
+                    personFaceMap.set(personKey, { person: dummyPerson, faces: [] });
+                }
+                personFaceMap.get(personKey).faces.push(face);
+            }
+        });
+
+        // Handle persons without detected faces (YOLO person but no face)
+        personBoxes.forEach(person => {
+            const personKey = JSON.stringify(person.coords);
+            if (!personFaceMap.has(personKey)) {
+                // Add person if not already linked to a face
+                personFaceMap.set(personKey, { person: person, faces: [] });
+            }
+        });
+
+
+        // Build HTML for each detected person/face
+        let personIndex = 1;
+        personFaceMap.forEach(data => {
+            const person = data.person;
+            const faces = data.faces;
+
+            let personDetails = [];
+
+            // Add person action if available
+            if (config.showActions && person.action) {
+                personDetails.push(`Hành vi: ${person.action}`);
+            }
+
+            // Build a single line for each person/face
+            let infoParts = [];
+            
+            // 1. Tên khuôn mặt (Nếu có)
+            if (config.showFaceNames && faces.length > 0) {
+                let faceNames = [];
+                faces.forEach(face => {
+                    if (face.similar_faces && face.similar_faces.length > 0) {
+                        faceNames.push(face.similar_faces.map(f => f.name).join(', '));
+                    }
+                });
+                if (faceNames.length > 0) {
+                    infoParts.push(`${faceNames.join(' & ')}`); // Join multiple face names if multiple faces for one person
+                } else {
+                    infoParts.push('Không xác định');
+                }
+            } else if (config.showFaces) {
+                infoParts.push('Không xác định'); // Default if no face name option, but faces enabled
+            }
+
+
+            // 2. Hành vi (Nếu có)
+            if (config.showActions && person.action) {
+                infoParts.push(person.action);
+            } else if (config.showActions && !person.action) {
+                 infoParts.push('Hành vi: Không xác định');
+            }
+            
+            // 3. Cảm xúc (Nếu có)
+            if (config.showEmotions && faces.length > 0) {
+                let emotions = [];
+                faces.forEach(face => {
+                    if (face.emotion) {
+                        emotions.push(face.emotion);
+                    }
+                });
+                if (emotions.length > 0) {
+                    infoParts.push(emotions.join(', ')); // Join multiple emotions if multiple faces for one person
+                } else {
+                    infoParts.push('Cảm xúc: Không xác định');
+                }
+            } else if (config.showEmotions) {
+                infoParts.push('Cảm xúc: Không xác định');
+            }
+            
+            let personInfo = infoParts.join(' - ');
+            if (personInfo === '') { // Fallback if no info at all
+                personInfo = 'Không có thông tin chi tiết';
+            }
+
+            peopleHtml += `
+                <div class="person-stat-item">
+                    <span class="person-name">${personIndex++}. </span>
+                    <span class="person-details">${personInfo}</span>
+                </div>
+            `;
+        });
+    }
+
+    detectedPeopleListElement.innerHTML = peopleHtml;
+}
+
+/**
  * Reset statistics counters
  */
 export function resetStats() {
@@ -177,5 +296,10 @@ export function resetStats() {
     // Clear action stats
     if (actionsStatsElement) {
         actionsStatsElement.innerHTML = '';
+    }
+
+    // Clear detected people list
+    if (detectedPeopleListElement) {
+        detectedPeopleListElement.innerHTML = '';
     }
 }

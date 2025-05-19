@@ -225,7 +225,7 @@ export function drawDetections(personBoxes, faceBoxes) {
             // Compose label text
             let labelParts = [];
             if (config.showConfidence) {
-                labelParts.push(`Mặt ${box.confidence.toFixed(2)}`);
+                labelParts.push(`${box.confidence.toFixed(2)}`);
             }
             
             // Add emotion if enabled and available
@@ -239,7 +239,18 @@ export function drawDetections(personBoxes, faceBoxes) {
                     ctx.fillStyle = config.emotionColor;
                 }
             } else {
-                ctx.fillStyle = config.faceColor;
+                ctx.fillStyle = config.faceColor; // Default color for face box if no emotion or emotion not shown
+            }
+
+            // Add similar face names if enabled and available
+            if (config.showFaceNames) {
+                let faceNameText = 'Không xác định'; // Mặc định là 'Không xác định'
+                if (box.similar_faces && box.similar_faces.length > 0) {
+                    // Backend trả về: [ { "name": "John Smith" } ]
+                    // Nên chúng ta cần trích xuất 'name' từ mỗi đối tượng.
+                    faceNameText = box.similar_faces.map(face => face.name).join(', ');
+                }
+                labelParts.push(`${faceNameText}`);
             }
             
             // Only draw label if we have something to show

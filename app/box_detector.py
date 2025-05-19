@@ -6,7 +6,7 @@ putenv("ROCM_PATH", "/opt/rocm-6.3.0/")
 
 import numpy as np
 import cv2
-from .models import load_models, get_emotion_model_details, get_action_model_details
+from .models import load_models, get_emotion_model_details, get_action_model_details, get_face_embedding_model_details
 from .config import EMOTION_LABELS, ACTION_LABELS
 
 class Detector:
@@ -17,7 +17,7 @@ class Detector:
         Initializes the Detector by loading the models.
         """
         # Tải các mô hình / Load models
-        self.person_model, self.face_model, self.emotion_interpreter, self.action_interpreter = load_models()
+        self.person_model, self.face_model, self.emotion_interpreter, self.action_interpreter, self.face_embedding_interpreter = load_models()
         
         # Lấy thông tin chi tiết về mô hình cảm xúc / Get emotion model details
         self.emotion_input_details, self.emotion_output_details = get_emotion_model_details(self.emotion_interpreter)
@@ -34,6 +34,14 @@ class Detector:
         self.action_input_shape = self.action_input_details[0]['shape']
         self.action_height = self.action_input_shape[1]
         self.action_width = self.action_input_shape[2]
+
+        # Lấy thông tin chi tiết của mô hình embedding
+        self.face_embedding_input_details, self.face_embedding_output_details = get_face_embedding_model_details(self.face_embedding_interpreter) # Thêm dòng này
+        self.face_embedding_input_shape = self.face_embedding_input_details[0]['shape'] # Thêm dòng này
+        self.embedding_size = self.face_embedding_input_shape[-1] # kích thước của vector embedding
+
+        # Lưu trữ mô hình embedding khuôn mặt
+        self.emb_model = self.face_embedding_interpreter
     
     def process_frame(self, frame):
         """
@@ -160,14 +168,16 @@ class Detector:
                                 # Chỉ xử lý nếu vùng ảnh khuôn mặt hợp lệ / Only process if face ROI is valid
                                 if face_roi.size > 0 and face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
                                     emotion = self._detect_emotion(face_roi)
+                                    face_embedding = self._get_face_embedding(face_roi)
                                 else:
                                     emotion = "Không xác định"  # Không thể xác định cảm xúc / Unknown emotion
+                                    face_embedding = None
                             else:
                                 emotion = "Không xác định"
                             
                             # Tọa độ toàn cục cho khuôn mặt / Global coordinates for the face
                             global_coords = (px1 + fx1, py1 + fy1, px1 + fx2, py1 + fy2)
-                            face_boxes.append((global_coords, conf, emotion))
+                            face_boxes.append((global_coords, conf, emotion, face_embedding))
                 
                 except Exception as e:
                     print(f"Error processing ROI {idx}: {e}")
@@ -311,3 +321,26 @@ class Detector:
         except Exception as e:
             print(f"Lỗi khi nhận diện hành vi: {e}")
             return "Không xác định"
+
+    def _get_face_embedding(self, face_img):
+        try:
+            resized_face = cv2.resize(face_img, (self.face_embedding_input_shape[1], self.face_embedding_input_shape[2])) # Sử dụng kích thước từ mô hình
+            
+            # Kiểm tra kiểu dữ liệu đầu vào của mô hình embedding
+            input_dtype = self.face_embedding_input_details[0]['dtype']
+            if input_dtype == np.float32:
+                normalized_face = resized_face.astype(np.float32) / 255.0
+            elif input_dtype == np.uint8:
+                normalized_face = resized_face.astype(np.uint8)
+            else:
+                normalized_face = resized_face.astype(np.float32) / 255.0
+                
+            input_tensor = np.expand_dims(normalized_face, axis=0)
+            
+            self.emb_model.set_tensor(self.face_embedding_input_details[0]['index'], input_tensor)
+            self.emb_model.invoke()
+            embedding = self.emb_model.get_tensor(self.face_embedding_output_details[0]['index'])[0].tolist()
+            return embedding
+        except Exception as e:
+            print(f"Error getting face embedding: {e}")
+            return None

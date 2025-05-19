@@ -1,6 +1,6 @@
 from os import putenv
 putenv("HSA_OVERRIDE_GFX_VERSION", "10.3.0")
-putenv("ROCM_PATH", "/opt/rocm-6.3.3")
+putenv("ROCM_PATH", "/opt/rocm-6.3.0")
 
 import numpy as np
 import tensorflow as tf
@@ -135,14 +135,14 @@ def benchmark_tflite_model(model_path, num_runs=100, use_real_data=True, data_pa
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Benchmark TFLite model')
-    parser.add_argument('--model', type=str, default='models/human_action_recognition_model.tflite',
+    parser.add_argument('--model', type=str, default='models/human_action_recognition_model_3.tflite',
                         help='Path to TFLite model')
     parser.add_argument('--runs', type=int, default=100,
                         help='Number of runs for benchmark')
     parser.add_argument('--use_real_data', action='store_true', default=True,
                         help='Use real image data if available')
     parser.add_argument('--data_path', type=str, 
-                        default='/home/haiah/Workspace/yolo-human-face-detection/dataset/har/test',
+                        default='dataset/har/test',
                         help='Path to test images')
     
     args = parser.parse_args()
