@@ -10,8 +10,8 @@ from .models import load_models, get_emotion_model_details, get_action_model_det
 from .config import EMOTION_LABELS, ACTION_LABELS
 from .redis_utils import RedisManager
 
-#Test Vector:
-test_vector = np.random.rand(128).astype(np.float32)
+#Test Vector (Tạo một vector 128 chiều ngẫu nhiên để kiểm tra):
+test_vector = np.random.rand(128).astype(np.float32) 
 
 class Detector:
     """Xử lý nhận diện người, khuôn mặt và cảm xúc / Detection handler"""
@@ -178,7 +178,8 @@ class Detector:
                             name = "Unknown"  
                             if face_roi.size > 0 and face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
                                 # Trích xuất vector đặc trưng
-                                # face_vector = self.extract_face_vector(face_roi)
+                                # face_vector = self.extract_face_vector(face_roi) Hiện tại chưa có hàm này
+                                # Sử dụng vector kiểm tra tạm thời / Use test vector temporarily
                                 face_vector = test_vector
                                 # Tìm kiếm khuôn mặt trong cơ sở dữ liệu
                                 try:
@@ -337,40 +338,5 @@ class Detector:
             print(f"Lỗi khi nhận diện hành vi: {e}")
             return "Không xác định"
             
-    def extract_face_vector(self, face_img):
-        """
-        Phương thức giả lập để trích xuất vector đặc trưng khuôn mặt.
-        Đây là phương thức đơn giản chỉ để minh họa, cần thay thế bằng mô hình thực tế.
-        
-        Args:
-            face_img (np.ndarray): Vùng ảnh khuôn mặt / Face image region
-            
-        Returns:
-            np.ndarray: Vector đặc trưng khuôn mặt (128 chiều) / Face embedding vector (128-dimensional)
-        """
-        try:
-            # Thực tế cần một mô hình trích xuất vector đặc trưng khuôn mặt thực tế ở đây
-            # Ví dụ: Sử dụng mô hình FaceNet, ArcFace, InsightFace, v.v.
-            # Mã code giả lập cho mục đích minh họa
-            
-            # Thay đổi kích thước ảnh
-            face_img_resized = cv2.resize(face_img, (112, 112))
-            
-            # Chuẩn hóa ảnh
-            face_img_normalized = face_img_resized.astype(np.float32) / 255.0
-            
-            # Giả lập vector 128 chiều ngẫu nhiên
-            # Trong ứng dụng thực tế, vector này sẽ được trích xuất từ mô hình học sâu
-            # Ghi chú: Đây chỉ là code mẫu, cần thay thế bằng mô hình thực tế
-            face_vector = np.random.rand(128).astype(np.float32)
-            
-            # Chuẩn hóa vector (L2 normalization)
-            face_vector = face_vector / np.linalg.norm(face_vector)
-            
-            return face_vector
-            
-        except Exception as e:
-            print(f"Lỗi khi trích xuất vector đặc trưng khuôn mặt: {e}")
-            return np.zeros(128, dtype=np.float32)
     
  
