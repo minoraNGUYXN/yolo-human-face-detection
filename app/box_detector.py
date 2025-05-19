@@ -183,7 +183,7 @@ class Detector:
                                 face_vector = test_vector
                                 # Tìm kiếm khuôn mặt trong cơ sở dữ liệu
                                 try:
-                                    face_search_result = self.redis_manager.search_vector(face_vector, "Giang_128", 1)
+                                    face_search_result = self.redis_manager.search_vector(face_vector, "test_index", 1)
                                     if face_search_result["success"] and face_search_result["results"]:
                                         # Lấy kết quả đầu tiên (khoảng cách thấp nhất)
                                         top_match = face_search_result["results"][0]
