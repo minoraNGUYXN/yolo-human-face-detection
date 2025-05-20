@@ -31,6 +31,8 @@ Hệ thống Nhận diện Người & Khuôn Mặt là ứng dụng web thời g
 └────────────────┘     └───────────────────┘     └────────────────┘
 ```
 
+
+
 ### 2.2. Luồng dữ liệu
 
 1. Người dùng mở ứng dụng web và cho phép truy cập camera
@@ -89,17 +91,21 @@ app/
 ├── config.py          # Cấu hình backend
 └── models.py          # Quản lý mô hình AI
 
+
 backend/
-└── main.py            # Máy chủ FastAPI chính
+├── main.py            # Máy chủ FastAPI chính
+└── redis_utils.py     # Quản lí kết nối đến Redis Database
 
 models/
-├── yolo11n.pt         # Mô hình YOLO nhận diện người
-├── best_face_model.pt # Mô hình nhận diện khuôn mặt
-└── emotion_model.tflite # Mô hình nhận diện cảm xúc
+├── yolov8n-person-lw.pt # Mô hình YOLO nhận diện người
+├── yolov8p-face-v2.pt # Mô hình nhận diện khuôn mặt
+├── human_action_recognition_model.tflite # Mô hình nhận diện hành vi
+├── face_embedding_model.keras # Mô hình trích xuất vector đặc trưng khuôn mặt
+└── emotion_model_2.tflite # Mô hình nhận diện cảm xúc
 ```
 
 #### 3.2.2. Các thành phần chính
-
+- **Redis Database**: Cơ sở dữ liệu Redis
 - **FastAPI Server**: Xử lý các yêu cầu từ frontend
 - **Detector**: Phát hiện người và khuôn mặt trong khung hình
 - **Emotion Recognition**: Nhận diện cảm xúc từ khuôn mặt đã phát hiện
@@ -178,7 +184,7 @@ https://localhost:8000
     {"coords": [x1, y1, x2, y2], "confidence": 0.95}
   ],
   "face_boxes": [
-    {"coords": [x1, y1, x2, y2], "confidence": 0.92, "emotion": "Vui vẻ"}
+    {"coords": [x1, y1, x2, y2], "confidence": 0.92, "emotion": "Vui vẻ", "name": name}
   ]
 }
 ```
@@ -224,12 +230,35 @@ https://localhost:8000
   - 5: Ngạc nhiên
   - 6: Bình thường
 
+### 7.4. Mô hình nhận diện hành vi
+- **Mô hình**: CNN tùy chỉnh
+- **Định dạng**: TensorFlow Lite (.tflite)
+- **Kích thước đầu vào**: 32x32 pixels (grayscale)
+- **Lớp hành vi**:
+  - 0: Gọi điện
+  - 1: Vỗ tay
+  - 2: Đạp xe
+  - 3: Khiêu vũ
+  - 4: Uống nước
+  - 5: Ăn uống
+  - 6: Đánh nhau
+  - 7: Ôm
+  - 8: Cười
+  - 9: Nghe nhạc
+  - 10: Chạy
+  - 11: Ngồi
+  - 12: Ngủ
+  - 13: Nhắn tin
+  - 14: Dùng laptop
+
+### 7.5. Mô hình trích xuất vector đặc trưng khuôn mặt
+
 ## 8. Giao diện người dùng
 
 ### 8.1. Giao diện Desktop
 
 Giao diện desktop được chia thành ba cột:
-- **Cột trái**: Thống kê (số người, khuôn mặt, cảm xúc)
+- **Cột trái**: Thống kê (số người, khuôn mặt, cảm xúc, hành vi, danh tính)
 - **Cột giữa**: Khung video từ camera
 - **Cột phải**: Bảng điều khiển với các tùy chọn
 
