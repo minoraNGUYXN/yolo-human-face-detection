@@ -246,9 +246,7 @@ export function drawDetections(personBoxes, faceBoxes) {
             if (config.showFaceNames) {
                 let faceNameText = 'Không xác định'; // Mặc định là 'Không xác định'
                 if (box.similar_faces && box.similar_faces.length > 0) {
-                    // Backend trả về: [ { "name": "John Smith" } ]
-                    // Nên chúng ta cần trích xuất 'name' từ mỗi đối tượng.
-                    faceNameText = box.similar_faces.map(face => face.name).join(', ');
+                    faceNameText = box.similar_faces.join(', ');
                 }
                 labelParts.push(`${faceNameText}`);
             }

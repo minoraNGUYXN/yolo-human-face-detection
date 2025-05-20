@@ -31,7 +31,7 @@ def store_face_data(user_id, name, face_embedding):
         print(f"Error storing face data: {e}")
         return False
 
-def find_similar_faces(query_embedding, top_k=5):
+def find_similar_faces(query_embedding, top_k=1):
     """Tìm kiếm các khuôn mặt tương đồng trong MongoDB."""
     try:
         query_vector = np.array(query_embedding, dtype=np.float32).tolist()
@@ -43,7 +43,7 @@ def find_similar_faces(query_embedding, top_k=5):
                             "type": "Point",
                             "coordinates": query_vector,
                         },
-                        "$maxDistance": 0.5,  # Ngưỡng khoảng cách, cần điều chỉnh
+                        "$maxDistance": 10.0,  # Ngưỡng khoảng cách, cần điều chỉnh
                     }
                 }
             },

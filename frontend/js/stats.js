@@ -226,16 +226,17 @@ export function updateDetectedPeopleList(personBoxes, faceBoxes) {
                 let faceNames = [];
                 faces.forEach(face => {
                     if (face.similar_faces && face.similar_faces.length > 0) {
-                        faceNames.push(face.similar_faces.map(f => f.name).join(', '));
+                        // join các chuỗi tên trực tiếp
+                        faceNames.push(face.similar_faces.join(', ')); 
                     }
                 });
                 if (faceNames.length > 0) {
-                    infoParts.push(`${faceNames.join(' & ')}`); // Join multiple face names if multiple faces for one person
+                    infoParts.push(`${faceNames.join(' & ')}`); // Vẫn join các nhóm tên từ các khuôn mặt khác nhau
                 } else {
                     infoParts.push('Không xác định');
                 }
             } else if (config.showFaces) {
-                infoParts.push('Không xác định'); // Default if no face name option, but faces enabled
+                infoParts.push('Không xác định');
             }
 
 

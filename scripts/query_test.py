@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from datetime import datetime, timezone
 import tensorflow as tf
 from tensorflow.keras import layers, Model  # Import Keras modules
+import time
 
 def load_embedding_model(input_shape=(160, 160, 3), embedding_dim=64):
     """Load mô hình embedding khuôn mặt."""
@@ -27,6 +28,7 @@ def load_embedding_model(input_shape=(160, 160, 3), embedding_dim=64):
     model.load_weights("models/face_embedding_model_64.h5")  # Đảm bảo đường dẫn chính xác
     return model
 
+
 def get_face_embedding(face_img, model):
     """Trích xuất embedding từ ảnh khuôn mặt sử dụng mô hình đã cho."""
     try:
@@ -38,6 +40,7 @@ def get_face_embedding(face_img, model):
     except Exception as e:
         print(f"Error getting face embedding: {e}")
         return None
+
 
 def store_face_data(user_id, name, face_embedding, collection):
     """Lưu trữ dữ liệu khuôn mặt vào MongoDB."""
@@ -62,6 +65,7 @@ def store_face_data(user_id, name, face_embedding, collection):
     except Exception as e:
         print(f"Error storing face data: {e}")  # Print the full exception
         return False
+
 
 def main():
     """Chức năng chính để tải ảnh và thông tin lên."""
@@ -89,12 +93,33 @@ def main():
     if face_embedding is None:
         print("Error: Could not extract face embedding.")
         return
+    
+    # Thực hiện truy vấn tương tự như trong benchmark và đo thời gian
+    query_embedding = face_embedding  # Sử dụng embedding đã trích xuất
+    top_k = 1  # Số lượng kết quả tương tự mong muốn
+    start_time = time.time()
+    results = face_collection.find(
+        {
+            "face_embedding": {
+                "$near": {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": query_embedding,
+                    },
+                    "$maxDistance": 10.0,  # Ngưỡng khoảng cách, cần điều chỉnh
+                },
+            },
+        },
+        {"_id": 0, "name": 1},  # Chỉ lấy trường "name"
+    ).limit(top_k)
+    end_time = time.time()
+    query_time = (end_time - start_time) * 1000  # Thời gian truy vấn tính bằng mili giây
 
-    # Lưu vào MongoDB
-    if store_face_data(user_id, name, face_embedding, face_collection):
-        print("Face data uploaded successfully.")
-    else:
-        print("Face data upload failed.")
+    # In kết quả truy vấn và thời gian
+    print(f"Thời gian truy vấn: {query_time:.2f} ms")
+    print("Kết quả truy vấn:")
+    for result in results:
+        print(result)
 
 if __name__ == "__main__":
     main()
