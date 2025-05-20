@@ -177,6 +177,10 @@ dataset/widerface-yolo/train/*
 dataset/widerface-yolo/val/*
 dataset/fer-2013/train/*
 dataset/fer-2013/test/*
+dataset/har/*
+dataset/vggface2/*
+test_imgs/*
+
 latency_distribution_h5.png
 latency_distribution_keras.png
 latency_distribution_tflite.png
@@ -187,3 +191,4 @@ model.tflite
 saved_model_format
 emotion_model_checkpoint.h5
 run_server.py
+structure.txt

@@ -1,11 +1,11 @@
 from os import putenv
 putenv("HSA_OVERRIDE_GFX_VERSION", "10.3.0")
-putenv("ROCM_PATH", "/opt/rocm-6.3.3")
+putenv("ROCM_PATH", "/opt/rocm-6.3.0")
 
 import tensorflow as tf
 
 # 1. Load và export model
-model = tf.keras.models.load_model('./models/emotion_model_2.h5')
+model = tf.keras.models.load_model('models/human_action_recognition_model.h5')
 model.export('saved_model_format')
 
 # 2. Khởi tạo converter từ SavedModel
@@ -17,9 +17,9 @@ converter.target_spec.supported_ops = [
     tf.lite.OpsSet.SELECT_TF_OPS       # cho phép dùng Flex ops
 ]
 
-# (tuỳ chọn) Nếu muốn thêm quantization:
-# converter.optimizations = [tf.lite.Optimize.DEFAULT]
-# converter.representative_dataset = ...
+# Bật FP16 quantization cho các weight và operation bên trong
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.target_spec.supported_types = [tf.float16]
 
 # 4. Convert
 tflite_model = converter.convert()

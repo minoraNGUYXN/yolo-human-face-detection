@@ -41,6 +41,7 @@
     margin-top: 15px;
     border-top: 1px solid #eee;
     padding-top: 10px;
+    display: block;
 }
 
 .emotions-stats h4 {
@@ -78,6 +79,125 @@
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
+}
+
+/* Action statistics styling */
+.actions-stats {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.actions-stats h4 {
+    margin-bottom: 8px;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.action-stat-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.action-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.action-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.action-count {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Styles for Detected People List */
+.detected-people-list {
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.detected-people-list h4 {
+    margin-bottom: 8px;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.detected-people-list .people-list-content {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.detected-people-list .people-list-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.detected-people-list .people-list-content::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+.detected-people-list .people-list-content::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+    border: 2px solid #f0f0f0;
+}
+
+.detected-people-list .people-list-content::-webkit-scrollbar-thumb:hover {
+    background-color: #aaa;
+}
+
+/* Style for each individual person item */
+.person-stat-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.person-name {
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.person-details {
+    flex: 1;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mobile specific styles */
+@media (max-width: 1023px) {
+    .person-stat-item {
+        display: inline-flex; /* Để hiển thị trên nhiều dòng nếu không đủ chỗ */
+        margin-right: 10px;
+        margin-bottom: 3px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Mobile specific styles */
+@media (max-width: 1023px) {
+    /* Compact action stats on mobile */
+    .action-stat-item {
+        display: inline-flex;
+        margin-right: 10px;
+        margin-bottom: 3px;
+        font-size: 0.9rem;
+    }
 }
 
 /* Mobile specific styles */
