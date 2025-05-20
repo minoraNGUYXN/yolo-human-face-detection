@@ -138,56 +138,30 @@ class Detector:
                   - count (int): Số lượng khuôn mặt được nhận diện. Number of detected faces.
                   - boxes (list): Danh sách các khung khuôn mặt với thông tin cảm xúc. List of face bounding boxes with emotion info.
         """
-        face_boxes = []
-        face_count = 0
-        
-        if not rois:
-            return {"count": 0, "boxes": []}
-        
-        try:
-            # Thay đổi: Xử lý từng ROI riêng biệt thay vì dùng batch processing
-            for idx, roi in enumerate(rois):
-                try:
-                    # Xử lý từng ROI một
-                    face_result = self.face_model(roi, conf=0.3, iou=0.45, imgsz=160, half=True, verbose=False)
-                    
-                    if len(face_result[0].boxes) > 0:
-                        face_count += len(face_result[0].boxes)
-                        orig_idx = indices[idx]
-                        px1, py1 = int(boxes[orig_idx][0]), int(boxes[orig_idx][1])
-                        
-                        # Duyệt qua từng khuôn mặt phát hiện được / Iterate through each detected face
-                        for box in face_result[0].boxes:
-                            fx1, fy1, fx2, fy2 = map(int, box.xyxy[0].cpu().numpy())
-                            conf = float(box.conf[0].cpu().numpy())
-                            
-                            # Lấy vùng ảnh khuôn mặt để nhận diện cảm xúc / Get face ROI for emotion detection
-                            if fx1 < fx2 and fy1 < fy2 and fx1 >= 0 and fy1 >= 0 and fx2 <= roi.shape[1] and fy2 <= roi.shape[0]:
-                                face_roi = roi[fy1:fy2, fx1:fx2]
-                                
-                                # Chỉ xử lý nếu vùng ảnh khuôn mặt hợp lệ / Only process if face ROI is valid
-                                if face_roi.size > 0 and face_roi.shape[0] > 0 and face_roi.shape[1] > 0:
-                                    emotion = self._detect_emotion(face_roi)
-                                    face_embedding = self._get_face_embedding(face_roi)
-                                else:
-                                    emotion = "Không xác định"  # Không thể xác định cảm xúc / Unknown emotion
-                                    face_embedding = None
-                            else:
-                                emotion = "Không xác định"
-                            
-                            # Tọa độ toàn cục cho khuôn mặt / Global coordinates for the face
-                            global_coords = (px1 + fx1, py1 + fy1, px1 + fx2, py1 + fy2)
-                            face_boxes.append((global_coords, conf, emotion, face_embedding))
-                
-                except Exception as e:
-                    print(f"Error processing ROI {idx}: {e}")
-                    continue  # Bỏ qua ROI này và tiếp tục với ROI tiếp theo
-        
-        except Exception as e:
-            print(f"Error in _detect_faces_and_emotions: {e}")
-            return {"count": 0, "boxes": []}
-            
-        return {"count": face_count, "boxes": face_boxes}
+        face_boxes, face_count = [], 0
+        for roi_idx, roi in enumerate(rois):
+            try:
+                result = self.face_model(roi, conf=0.3, iou=0.45, imgsz=160, half=True, verbose=False)[0]
+                if not result.boxes:
+                    continue
+                # Chỉ lấy khuôn mặt có confidence cao nhất / Select the single best face
+                best = max(result.boxes, key=lambda b: float(b.conf.cpu().numpy()))
+                fx1,fy1,fx2,fy2 = map(int, best.xyxy[0].cpu().numpy())
+                conf = float(best.conf[0].cpu().numpy())
+                px1,py1 = int(boxes[indices[roi_idx]][0]), int(boxes[indices[roi_idx]][1])
+                # Crop face region
+                face_roi = roi[fy1:fy2, fx1:fx2] if fx2>fx1 and fy2>fy1 else None
+                if face_roi is None or face_roi.size==0:
+                    continue
+                emotion = self._detect_emotion(face_roi)
+                embedding = self._get_face_embedding(face_roi)
+                global_box = (px1+fx1, py1+fy1, px1+fx2, py1+fy2)
+                face_boxes.append((global_box, conf, emotion, embedding))
+                face_count += 1
+            except Exception as e:
+                print(f"Error in face ROI {roi_idx}: {e}")
+                continue
+        return {'count': face_count, 'boxes': face_boxes}
     
     def _detect_emotion(self, face_img):
         """
